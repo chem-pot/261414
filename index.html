@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>물질의 전기적 성질 시뮬레이션</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            min-height: 100vh;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #e0e0ff;
+            text-shadow: 0 0 10px rgba(100, 150, 255, 0.8);
+        }
+
+        .main-container {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            align-items: flex-start;
+        }
+
+        .item-table-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            width: 280px;
+            flex-shrink: 0;
+        }
+
+        .item-table-container h2 {
+            text-align: center;
+            font-size: 15px;
+            margin-bottom: 10px;
+            color: #aad4ff;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 8px;
+        }
+
+        .item-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .item-table thead tr th {
+            padding: 7px 5px;
+            text-align: center;
+        }
+
+        .item-table thead th:nth-child(1) {
+            color: #ff9966;
+            background: rgba(255, 100, 50, 0.2);
+            border-radius: 5px 0 0 0;
+        }
+
+        .item-table thead th:nth-child(2) {
+            color: #66ccff;
+            background: rgba(50, 150, 255, 0.2);
+            border-radius: 0 5px 0 0;
+        }
+
+        .item-table tbody tr {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .item-table tbody td {
+            padding: 7px 8px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            transition: background 0.2s;
+            border-radius: 4px;
+        }
+
+        .item-table tbody td:hover {
+            background: rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .item-table tbody td.conductor { color: #ffcc88; }
+        .item-table tbody td.insulator { color: #88ccff; }
+
+        .item-table tbody td.selected-conductor {
+            background: rgba(255, 150, 50, 0.4) !important;
+            color: #ffaa44;
+            font-weight: bold;
+        }
+
+        .item-table tbody td.selected-insulator {
+            background: rgba(50, 150, 255, 0.4) !important;
+            color: #44aaff;
+            font-weight: bold;
+        }
+
+        .sim-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .info-table-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 12px 20px;
+            width: 100%;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .info-table th {
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        .info-table td {
+            padding: 10px 15px;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .info-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .badge-conductor {
+            background: rgba(255, 150, 50, 0.3);
+            border: 1px solid #ffaa44;
+            color: #ffaa44;
+        }
+
+        .badge-insulator {
+            background: rgba(50, 150, 255, 0.3);
+            border: 1px solid #44aaff;
+            color: #44aaff;
+        }
+
+        .badge-none {
+            background: rgba(150, 150, 150, 0.2);
+            border: 1px solid #888;
+            color: #aaa;
+        }
+
+        .canvas-wrapper {
+            background: rgba(0, 0, 10, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 10px;
+            width: 100%;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 8px;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 35px;
+            font-size: 15px;
+            font-family: 'Malgun Gothic', sans-serif;
+            font-weight: bold;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+        }
+
+        #startBtn {
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #333;
+            box-shadow: 0 4px 15px rgba(255, 200, 50, 0.4);
+        }
+
+        #startBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 200, 50, 0.6);
+        }
+
+        #startBtn:disabled {
+            background: linear-gradient(135deg, #555, #777);
+            color: #aaa;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #resetBtn {
+            background: linear-gradient(135deg, #355c7d, #6c5b7b);
+            color: white;
+            box-shadow: 0 4px 15px rgba(100, 100, 200, 0.4);
+        }
+
+        #resetBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(100, 100, 200, 0.6);
+        }
+
+        .description {
+            font-size: 12px;
+            color: #aaa;
+            text-align: center;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 8px 15px;
+            width: 100%;
+            line-height: 1.6;
+        }
+
+        .desc-conductor { color: #ffcc88; }
+        .desc-insulator { color: #88ccff; }
+
+        /* ===================== 팝업 스타일 ===================== */
+        .popup-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .popup-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .popup-box {
+            background: linear-gradient(145deg, #1a1a3e, #0d1b3e);
+            border-radius: 20px;
+            padding: 0;
+            width: 480px;
+            max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8),
+                        0 0 40px rgba(100, 150, 255, 0.15);
+            transform: scale(0.85) translateY(20px);
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+        }
+
+        .popup-overlay.active .popup-box {
+            transform: scale(1) translateY(0);
+        }
+
+        .popup-header {
+            padding: 20px 25px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .popup-header-conductor {
+            background: linear-gradient(135deg,
+                rgba(255, 140, 30, 0.35),
+                rgba(255, 100, 10, 0.15));
+            border-bottom: 1px solid rgba(255, 150, 50, 0.3);
+        }
+
+        .popup-header-insulator {
+            background: linear-gradient(135deg,
+                rgba(50, 120, 255, 0.35),
+                rgba(20, 80, 200, 0.15));
+            border-bottom: 1px solid rgba(80, 150, 255, 0.3);
+        }
+
+        .popup-emoji {
+            font-size: 42px;
+            line-height: 1;
+            filter: drop-shadow(0 0 10px rgba(255,255,200,0.5));
+        }
+
+        .popup-title-block {
+            flex: 1;
+            padding: 0 15px;
+        }
+
+        .popup-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .popup-type-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .popup-type-conductor {
+            background: rgba(255,150,50,0.25);
+            border: 1px solid rgba(255,170,80,0.6);
+            color: #ffcc88;
+        }
+
+        .popup-type-insulator {
+            background: rgba(50,130,255,0.25);
+            border: 1px solid rgba(80,160,255,0.6);
+            color: #99ccff;
+        }
+
+        .popup-close {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #ccc;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .popup-close:hover {
+            background: rgba(255,80,80,0.3);
+            border-color: rgba(255,100,100,0.5);
+            color: #ff8888;
+            transform: rotate(90deg);
+        }
+
+        .popup-body {
+            padding: 20px 25px 25px;
+        }
+
+        .popup-section {
+            margin-bottom: 16px;
+        }
+
+        .popup-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .popup-section-title {
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .section-title-conductor { color: #ffaa66; }
+        .section-title-insulator { color: #66aaff; }
+
+        .popup-section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .popup-desc {
+            font-size: 14px;
+            color: #dde;
+            line-height: 1.75;
+            background: rgba(255,255,255,0.04);
+            border-radius: 10px;
+            padding: 12px 14px;
+            border-left: 3px solid;
+        }
+
+        .popup-desc-conductor {
+            border-left-color: rgba(255,150,50,0.6);
+        }
+
+        .popup-desc-insulator {
+            border-left-color: rgba(80,150,255,0.6);
+        }
+
+        .popup-uses {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .use-chip {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            transition: transform 0.2s;
+        }
+
+        .use-chip:hover {
+            transform: translateY(-2px);
+        }
+
+        .use-chip-conductor {
+            background: rgba(255, 140, 30, 0.18);
+            border: 1px solid rgba(255, 160, 60, 0.35);
+            color: #ffcc99;
+        }
+
+        .use-chip-insulator {
+            background: rgba(60, 130, 255, 0.18);
+            border: 1px solid rgba(80, 160, 255, 0.35);
+            color: #99ccff;
+        }
+
+        .popup-props {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .prop-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .prop-label {
+            color: #888;
+            margin-bottom: 3px;
+            font-size: 11px;
+        }
+
+        .prop-value {
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .prop-value-conductor { color: #ffbb66; }
+        .prop-value-insulator { color: #77bbff; }
+
+        .popup-footer {
+            padding: 12px 25px 20px;
+            text-align: center;
+        }
+
+        .popup-confirm-btn {
+            padding: 10px 40px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.25s;
+            font-family: 'Malgun Gothic', sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        .popup-confirm-conductor {
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #333;
+            box-shadow: 0 4px 15px rgba(255,200,50,0.35);
+        }
+
+        .popup-confirm-conductor:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,200,50,0.55);
+        }
+
+        .popup-confirm-insulator {
+            background: linear-gradient(135deg, #2255cc, #4488ff);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(80,150,255,0.35);
+        }
+
+        .popup-confirm-insulator:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(80,150,255,0.55);
+        }
+    </style>
+</head>
+<body>
+
+<h1>⚡ 물질의 전기적 성질 시뮬레이션</h1>
+
+<div class="main-container">
+    <div class="item-table-container">
+        <h2>🔍 물질 선택표</h2>
+        <table class="item-table">
+            <thead>
+                <tr>
+                    <th>⚡ 도체</th>
+                    <th>🛡 부도체</th>
+                </tr>
+            </thead>
+            <tbody id="itemTableBody"></tbody>
+        </table>
+    </div>
+
+    <div class="sim-container">
+        <div class="info-table-container">
+            <table class="info-table">
+                <thead>
+                    <tr>
+                        <th>선택한 물질</th>
+                        <th>전기적 분류</th>
+                        <th>전자 상태</th>
+                        <th>전기 전도성</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td id="infoName" style="color:#fff">— 선택 안됨 —</td>
+                        <td id="infoType"><span class="info-badge badge-none">미선택</span></td>
+                        <td id="infoElectron" style="color:#aaa;">—</td>
+                        <td id="infoConductivity" style="color:#aaa;">—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="simCanvas" width="620" height="360"></canvas>
+        </div>
+
+        <div class="button-row">
+            <button id="startBtn" disabled>▶ 실행</button>
+            <button id="resetBtn">↺ 초기화</button>
+        </div>
+
+        <div class="description">
+            <span class="desc-conductor">■ 도체</span>: 자유전자가 원자핵의 구속을 벗어나 자유롭게 이동 → 전류가 잘 흐름 &nbsp;|&nbsp;
+            <span class="desc-insulator">■ 부도체</span>: 전자가 원자핵에 강하게 속박되어 이동 불가 → 전류가 흐르지 않음
+        </div>
+    </div>
+</div>
+
+<!-- 팝업 -->
+<div class="popup-overlay" id="popupOverlay">
+    <div class="popup-box" id="popupBox">
+        <div class="popup-header" id="popupHeader">
+            <div class="popup-emoji" id="popupEmoji">⚗️</div>
+            <div class="popup-title-block">
+                <div class="popup-name" id="popupName">물질 이름</div>
+                <span class="popup-type-badge" id="popupTypeBadge">도체</span>
+            </div>
+            <button class="popup-close" id="popupClose">✕</button>
+        </div>
+        <div class="popup-body">
+            <div class="popup-section">
+                <div class="popup-section-title" id="popupDescTitle">📖 물질 설명</div>
+                <div class="popup-desc" id="popupDesc">설명 내용</div>
+            </div>
+            <div class="popup-section">
+                <div class="popup-section-title" id="popupUsesTitle">🔧 실생활 활용 예시</div>
+                <div class="popup-uses" id="popupUses"></div>
+            </div>
+            <div class="popup-section">
+                <div class="popup-section-title" id="popupPropsTitle">📊 물리적 특성</div>
+                <div class="popup-props" id="popupProps"></div>
+            </div>
+        </div>
+        <div class="popup-footer">
+            <button class="popup-confirm-btn" id="popupConfirmBtn">✔ 이 물질로 시뮬레이션 시작</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===================== 물질 데이터 =====================
+const conductors = [
+    {
+        name: "구리", emoji: "🔶",
+        desc: "전기 전도성이 매우 높은 금속으로, 자유전자가 풍부합니다. 연성·전성이 뛰어나 다양한 형태로 가공이 가능하며, 지구에서 두 번째로 전도성이 좋은 금속입니다.",
+        uses: ["전선 · 케이블", "전자 회로기판", "수도관", "모터 코일", "방열판"],
+        props: [
+            { label: "전기 전도도", value: "5.96×10⁷ S/m" },
+            { label: "녹는점", value: "1,085 °C" },
+            { label: "밀도", value: "8.96 g/cm³" },
+            { label: "전자 상태", value: "자유전자" }
+        ]
+    },
+    {
+        name: "철", emoji: "⚙️",
+        desc: "지구에서 가장 많이 사용되는 금속 중 하나로, 도체이지만 구리보다 전도성이 낮습니다. 강도가 높고 자성을 띠는 특성이 있습니다.",
+        uses: ["건축 구조물", "전자기기 부품", "변압기 철심", "선로 · 레일", "공업 기계"],
+        props: [
+            { label: "전기 전도도", value: "1.0×10⁷ S/m" },
+            { label: "녹는점", value: "1,538 °C" },
+            { label: "밀도", value: "7.87 g/cm³" },
+            { label: "전자 상태", value: "자유전자" }
+        ]
+    },
+    {
+        name: "알루미늄", emoji: "🥈",
+        desc: "가볍고 전도성이 우수한 금속입니다. 구리보다 가볍기 때문에 장거리 송전선에 많이 사용되며, 표면에 산화막이 생겨 부식에 강합니다.",
+        uses: ["고압 송전선", "항공기 외벽", "캔 · 포일", "스마트폰 케이스", "방열판"],
+        props: [
+            { label: "전기 전도도", value: "3.77×10⁷ S/m" },
+            { label: "녹는점", value: "660 °C" },
+            { label: "밀도", value: "2.70 g/cm³" },
+            { label: "전자 상태", value: "자유전자" }
+        ]
+    },
+    {
+        name: "금", emoji: "🥇",
+        desc: "부식되지 않고 전도성이 매우 높은 귀금속입니다. 산화되지 않아 접촉 저항이 낮기 때문에 정밀 전자 부품의 접점에 사용됩니다.",
+        uses: ["CPU 단자 · 핀", "반도체 배선", "우주선 전자장비", "의료기기 접점", "고급 오디오 단자"],
+        props: [
+            { label: "전기 전도도", value: "4.52×10⁷ S/m" },
+            { label: "녹는점", value: "1,064 °C" },
+            { label: "밀도", value: "19.32 g/cm³" },
+            { label: "전자 상태", value: "자유전자" }
+        ]
+    },
+    {
+        name: "은", emoji: "💿",
+        desc: "모든 금속 중 전기 전도도가 가장 높습니다. 항균 특성도 있어 의료 분야에도 활용되지만 가격이 높아 일반 전선보다는 특수 용도에 사용됩니다.",
+        uses: ["고성능 전자 접점", "태양광 패널 전극", "항균 코팅", "고급 오디오 케이블", "RFID 안테나"],
+        props: [
+            { label: "전기 전도도", value: "6.30×10⁷ S/m" },
+            { label: "녹는점", value: "962 °C" },
+            { label: "밀도", value: "10.49 g/cm³" },
+            { label: "전자 상태", value: "자유전자" }
+        ]
+    },
+    {
+        name: "납", emoji: "🔩",
+        desc: "밀도가 높고 부드러운 금속으로 전도성이 있습니다. X선을 차단하는 특성이 있으며, 과거에는 납땜에 많이 쓰였으나 독성 문제로 사용이 줄고 있습니다.",
+        uses: ["배터리 전극(납축전지)", "X선 차폐 장비", "방사선 방호복", "진동 흡수 소재", "케이블 피복"],
+        props: [
+            { label: "전기 전도도", value: "4.55×10⁶ S/m" },
+            { label: "녹는점", value: "327 °C" },
+            { label: "밀도", value: "11.34 g/cm³" },
+            { label: "전자 상태", value: "자유전자" }
+        ]
+    },
+    {
+        name: "흑연", emoji: "✏️",
+        desc: "탄소 원자가 층상 구조로 배열된 물질로, 비금속이지만 전기를 전도합니다. 각 층 안에서 자유전자가 이동할 수 있어 평면 방향으로 전도성이 높습니다.",
+        uses: ["연필심", "배터리 전극(리튬이온)", "전기 모터 브러시", "전기 아크 전극", "핵반응로 감속재"],
+        props: [
+            { label: "전기 전도도", value: "~10⁵ S/m (면내)" },
+            { label: "녹는점", value: "3,642 °C (승화)" },
+            { label: "밀도", value: "2.09~2.23 g/cm³" },
+            { label: "전자 상태", value: "층내 자유전자" }
+        ]
+    },
+    {
+        name: "소금물", emoji: "🧂",
+        desc: "소금(NaCl)이 물에 녹으면 Na⁺와 Cl⁻ 이온으로 분리되며, 이 이온들이 전하를 운반하여 전류가 흐릅니다. 이온 전도체의 대표적인 예입니다.",
+        uses: ["수중 전기분해", "염전 발전", "체내 신경 신호 전달", "전해질 음료", "전기 도금"],
+        props: [
+            { label: "전도 방식", value: "이온 전도" },
+            { label: "농도 의존성", value: "농도↑ → 전도↑" },
+            { label: "상태", value: "액체" },
+            { label: "전자 상태", value: "자유 이온" }
+        ]
+    },
+    {
+        name: "수은", emoji: "🌡️",
+        desc: "상온에서 액체 상태인 유일한 금속입니다. 자유전자를 가져 전기가 흐르며, 열에 의해 팽창하는 특성이 있어 온도계에 사용됩니다. 독성이 강해 취급에 주의가 필요합니다.",
+        uses: ["온도계 (구식)", "형광등", "스위치 접점", "혈압계", "금 추출(아말감)"],
+        props: [
+            { label: "전기 전도도", value: "1.04×10⁶ S/m" },
+            { label: "녹는점", value: "-39 °C" },
+            { label: "밀도", value: "13.53 g/cm³" },
+            { label: "전자 상태", value: "자유전자" }
+        ]
+    },
+    {
+        name: "텅스텐", emoji: "💡",
+        desc: "모든 금속 중 녹는점이 가장 높아 고온에서도 형태를 유지합니다. 전기를 통하면 강하게 빛을 발하는 특성이 있어 백열전구의 필라멘트로 오래 사용되었습니다.",
+        uses: ["백열전구 필라멘트", "X선 관 타겟", "전기 용접 전극", "초경합금 공구", "로켓 노즐"],
+        props: [
+            { label: "전기 전도도", value: "1.89×10⁷ S/m" },
+            { label: "녹는점", value: "3,422 °C" },
+            { label: "밀도", value: "19.25 g/cm³" },
+            { label: "전자 상태", value: "자유전자" }
+        ]
+    }
+];
+
+const insulators = [
+    {
+        name: "유리", emoji: "🪟",
+        desc: "규소(Si)와 산소(O)가 강하게 결합된 구조로, 전자가 원자에 단단히 속박되어 있습니다. 투명하고 단단하며 고온에서 녹아 다양한 형태로 가공 가능합니다.",
+        uses: ["창문 · 렌즈", "고압 애자(절연체)", "광섬유 케이블", "스마트폰 화면", "실험 기구"],
+        props: [
+            { label: "전기 전도도", value: "~10⁻¹² S/m" },
+            { label: "녹는점", value: "약 700~1,000 °C" },
+            { label: "밀도", value: "2.5 g/cm³" },
+            { label: "전자 상태", value: "속박전자" }
+        ]
+    },
+    {
+        name: "고무", emoji: "🟤",
+        desc: "천연 또는 합성 폴리머로 이루어진 탄성 물질입니다. 전자가 강하게 속박되어 전기를 거의 통하지 않으며, 탄성과 절연성 덕분에 전선 피복 등에 널리 쓰입니다.",
+        uses: ["전선 피복", "고무 장갑(전기 안전)", "타이어", "절연 패킹", "고무 발판"],
+        props: [
+            { label: "전기 전도도", value: "~10⁻¹⁵ S/m" },
+            { label: "탄성도", value: "매우 높음" },
+            { label: "내열성", value: "약 150 °C" },
+            { label: "전자 상태", value: "속박전자" }
+        ]
+    },
+    {
+        name: "플라스틱", emoji: "🧴",
+        desc: "탄소 기반 고분자 화합물로, 전자가 분자 내에 강하게 결합되어 있어 절연체입니다. 가볍고 성형이 쉬우며 다양한 전기·전자 제품의 외장재로 사용됩니다.",
+        uses: ["콘센트 · 스위치 몸체", "전자기기 케이스", "절연 테이프", "커패시터 유전체", "전선 피복"],
+        props: [
+            { label: "전기 전도도", value: "~10⁻¹⁶ S/m" },
+            { label: "비중", value: "0.9~1.4 g/cm³" },
+            { label: "내열성", value: "60~150 °C" },
+            { label: "전자 상태", value: "속박전자" }
+        ]
+    },
+    {
+        name: "나무", emoji: "🪵",
+        desc: "셀룰로스 섬유로 이루어진 천연 재료로, 건조 상태에서는 절연체로 작동합니다. 단, 수분을 흡수하면 전도성이 증가하므로 습기에 주의해야 합니다.",
+        uses: ["전신주 (건조 상태)", "가구·건축 내장재", "전기 기구 손잡이(구식)", "절연 받침대", "칠판"],
+        props: [
+            { label: "전기 전도도", value: "~10⁻¹⁴ S/m (건조)" },
+            { label: "밀도", value: "0.4~0.9 g/cm³" },
+            { label: "특이사항", value: "습윤 시 전도↑" },
+            { label: "전자 상태", value: "속박전자" }
+        ]
+    },
+    {
+        name: "도자기", emoji: "🏺",
+        desc: "고온에서 구운 세라믹 소재로, 전자가 이온 결합 또는 공유 결합으로 강하게 묶여 있습니다. 내열성·내화학성이 뛰어난 절연체입니다.",
+        uses: ["고압 애자(전신주 절연)", "전기 절연 기판", "스파크 플러그", "점화 플러그", "내열 식기"],
+        props: [
+            { label: "전기 전도도", value: "~10⁻¹³ S/m" },
+            { label: "내열성", value: "1,200 °C 이상" },
+            { label: "경도", value: "높음(취성 있음)" },
+            { label: "전자 상태", value: "속박전자" }
+        ]
+    },
+    {
+        name: "종이", emoji: "📄",
+        desc: "식물 섬유를 압축·건조한 얇은 시트 소재입니다. 건조 상태에서 절연체로 작동하며, 얇고 가벼워서 커패시터의 유전체나 절연 시트로 사용됩니다.",
+        uses: ["커패시터 유전체 시트", "절연 포장재", "변압기 절연층", "전기 도면 출력", "서킷 패턴 보호막"],
+        props: [
+            { label: "전기 전도도", value: "~10⁻¹¹ S/m (건조)" },
+            { label: "두께", value: "0.05~0.1 mm (일반)" },
+            { label: "특이사항", value: "습윤 시 전도↑" },
+            { label: "전자 상태", value: "속박전자" }
+        ]
+    },
+    {
+        name: "면(섬유)", emoji: "🧶",
+        desc: "목화에서 얻는 천연 셀룰로스 섬유입니다. 건조 상태에서 전기를 통하지 않아 절연 장갑, 전선 외피 등에 사용됩니다. 유연성이 높아 착용감이 좋습니다.",
+        uses: ["전기 절연 장갑 내피", "전선 외피 보강", "의류", "붕대·의료 소재", "필터 소재"],
+        props: [
+            { label: "전기 전도도", value: "~10⁻¹¹ S/m" },
+            { label: "탄성도", value: "낮음" },
+            { label: "흡습성", value: "높음" },
+            { label: "전자 상태", value: "속박전자" }
+        ]
+    },
+    {
+        name: "순수한 물", emoji: "💧",
+        desc: "이온이 거의 없는 순수한 물(증류수)은 전기를 거의 통하지 않습니다. 하지만 소금, 산, 염기 등이 녹으면 이온이 생성되어 전도성이 생깁니다.",
+        uses: ["반도체 세척수", "실험실 용매", "배터리 전해질 용매", "냉각수 (순수 상태)", "의약품 제조"],
+        props: [
+            { label: "전기 전도도", value: "~5.5×10⁻⁶ S/m" },
+            { label: "비점", value: "100 °C" },
+            { label: "밀도", value: "1.00 g/cm³" },
+            { label: "전자 상태", value: "속박(이온 극소)" }
+        ]
+    },
+    {
+        name: "공기", emoji: "🌬️",
+        desc: "질소, 산소 등으로 이루어진 기체 혼합물로, 일반 상태에서는 전기를 거의 통하지 않습니다. 하지만 매우 강한 전기장에서는 절연이 파괴되어 방전(번개)이 발생합니다.",
+        uses: ["변압기 절연 매질", "고압 차단기 내부", "에어 컨덴서 유전체", "공기 절연 스위치기어", "자연 번개 방전"],
+        props: [
+            { label: "전기 전도도", value: "~3×10⁻¹⁵ S/m" },
+            { label: "절연 파괴 전압", value: "약 3MV/m" },
+            { label: "밀도", value: "1.2 kg/m³" },
+            { label: "전자 상태", value: "속박(기체 분자)" }
+        ]
+    },
+    {
+        name: "다이아몬드", emoji: "💎",
+        desc: "탄소 원자가 강한 공유 결합으로 정사면체 구조를 이루는 물질로, 자연에서 가장 단단한 물질입니다. 모든 전자가 결합에 참여하여 전기를 통하지 않는 완벽한 절연체입니다.",
+        uses: ["고압 절연 창", "반도체 기판 소재(연구)", "드릴 · 연삭 공구", "열 방출 소재", "광학 창(레이저)"],
+        props: [
+            { label: "전기 전도도", value: "~10⁻¹³ S/m" },
+            { label: "모스 경도", value: "10 (최고)" },
+            { label: "열전도도", value: "매우 높음" },
+            { label: "전자 상태", value: "완전 속박전자" }
+        ]
+    }
+];
+
+// ===================== 표 생성 =====================
+const tbody = document.getElementById('itemTableBody');
+for (let i = 0; i < 10; i++) {
+    const tr = document.createElement('tr');
+
+    const tdC = document.createElement('td');
+    tdC.classList.add('conductor');
+    tdC.textContent = conductors[i].emoji + ' ' + conductors[i].name;
+    tdC.dataset.type = 'conductor';
+    tdC.dataset.index = i;
+    tdC.addEventListener('click', () => openPopup('conductor', i, tdC));
+
+    const tdI = document.createElement('td');
+    tdI.classList.add('insulator');
+    tdI.textContent = insulators[i].emoji + ' ' + insulators[i].name;
+    tdI.dataset.type = 'insulator';
+    tdI.dataset.index = i;
+    tdI.addEventListener('click', () => openPopup('insulator', i, tdI));
+
+    tr.appendChild(tdC);
+    tr.appendChild(tdI);
+    tbody.appendChild(tr);
+}
+
+// ===================== 팝업 =====================
+let pendingTd = null;
+let pendingType = null;
+let pendingIndex = null;
+
+function openPopup(type, index, td) {
+    const data = type === 'conductor' ? conductors[index] : insulators[index];
+    pendingTd = td;
+    pendingType = type;
+    pendingIndex = index;
+
+    const isCond = type === 'conductor';
+
+    // 헤더
+    const header = document.getElementById('popupHeader');
+    header.className = 'popup-header ' + (isCond ? 'popup-header-conductor' : 'popup-header-insulator');
+    document.getElementById('popupEmoji').textContent = data.emoji;
+    document.getElementById('popupName').textContent = data.name;
+
+    const badge = document.getElementById('popupTypeBadge');
+    badge.className = 'popup-type-badge ' + (isCond ? 'popup-type-conductor' : 'popup-type-insulator');
+    badge.textContent = isCond ? '⚡ 도체' : '🛡 부도체';
+
+    // 설명
+    const descTitle = document.getElementById('popupDescTitle');
+    descTitle.className = 'popup-section-title ' + (isCond ? 'section-title-conductor' : 'section-title-insulator');
+    const descBox = document.getElementById('popupDesc');
+    descBox.className = 'popup-desc ' + (isCond ? 'popup-desc-conductor' : 'popup-desc-insulator');
+    descBox.textContent = data.desc;
+
+    // 활용 예시
+    const usesTitle = document.getElementById('popupUsesTitle');
+    usesTitle.className = 'popup-section-title ' + (isCond ? 'section-title-conductor' : 'section-title-insulator');
+    const usesBox = document.getElementById('popupUses');
+    usesBox.innerHTML = '';
+    data.uses.forEach(use => {
+        const chip = document.createElement('span');
+        chip.className = 'use-chip ' + (isCond ? 'use-chip-conductor' : 'use-chip-insulator');
+        chip.textContent = use;
+        usesBox.appendChild(chip);
+    });
+
+    // 특성
+    const propsTitle = document.getElementById('popupPropsTitle');
+    propsTitle.className = 'popup-section-title ' + (isCond ? 'section-title-conductor' : 'section-title-insulator');
+    const propsBox = document.getElementById('popupProps');
+    propsBox.innerHTML = '';
+    data.props.forEach(prop => {
+        const item = document.createElement('div');
+        item.className = 'prop-item';
+        item.innerHTML = `
+            <div class="prop-label">${prop.label}</div>
+            <div class="prop-value ${isCond ? 'prop-value-conductor' : 'prop-value-insulator'}">${prop.value}</div>
+        `;
+        propsBox.appendChild(item);
+    });
+
+    // 확인 버튼
+    const confirmBtn = document.getElementById('popupConfirmBtn');
+    confirmBtn.className = 'popup-confirm-btn ' + (isCond ? 'popup-confirm-conductor' : 'popup-confirm-insulator');
+
+    // 오버레이 활성화
+    document.getElementById('popupOverlay').classList.add('active');
+}
+
+function closePopup() {
+    document.getElementById('popupOverlay').classList.remove('active');
+}
+
+document.getElementById('popupClose').addEventListener('click', closePopup);
+
+document.getElementById('popupOverlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('popupOverlay')) closePopup();
+});
+
+document.getElementById('popupConfirmBtn').addEventListener('click', () => {
+    closePopup();
+    if (pendingTd) {
+        // 기존 선택 해제
+        document.querySelectorAll('.item-table tbody td').forEach(el => {
+            el.classList.remove('selected-conductor', 'selected-insulator');
+        });
+        pendingTd.classList.add(pendingType === 'conductor' ? 'selected-conductor' : 'selected-insulator');
+        selectedType = pendingType;
+        selectedName = (pendingType === 'conductor' ? conductors : insulators)[pendingIndex].name;
+        updateInfoTable(selectedType, selectedName);
+        document.getElementById('startBtn').disabled = false;
+        stopAnimation();
+        initParticles();
+        drawStatic();
+    }
+});
+
+// ===================== 상태 변수 =====================
+let selectedType = null;
+let selectedName = null;
+let animating = false;
+let animFrame = null;
+let particles = [];
+let nuclei = [];
+let time = 0;
+
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width;
+const H = canvas.height;
+
+// ===================== 정보 표 업데이트 =====================
+function updateInfoTable(type, name) {
+    document.getElementById('infoName').textContent = name;
+    if (type === 'conductor') {
+        document.getElementById('infoType').innerHTML = '<span class="info-badge badge-conductor">⚡ 도체</span>';
+        document.getElementById('infoElectron').innerHTML = '<span style="color:#ffcc88">자유전자 (Free Electron)</span>';
+        document.getElementById('infoConductivity').innerHTML = '<span style="color:#ffaa44">높음 ▲</span>';
+    } else {
+        document.getElementById('infoType').innerHTML = '<span class="info-badge badge-insulator">🛡 부도체</span>';
+        document.getElementById('infoElectron').innerHTML = '<span style="color:#88ccff">속박전자 (Bound Electron)</span>';
+        document.getElementById('infoConductivity').innerHTML = '<span style="color:#4488ff">매우 낮음 ▼</span>';
+    }
+}
+
+// ===================== 파티클 초기화 =====================
+function initParticles() {
+    particles = [];
+    nuclei = [];
+    const rows = 4, cols = 6;
+    const spacingX = W / (cols + 1);
+    const spacingY = (H - 60) / (rows + 1);
+    const offsetY = 30;
+
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const x = spacingX * (c + 1);
+            const y = offsetY + spacingY * (r + 1);
+            nuclei.push({ x, y, r: 14 });
+
+            if (selectedType === 'conductor') {
+                const count = 2 + Math.floor(Math.random() * 2);
+                for (let e = 0; e < count; e++) {
+                    const angle = (Math.PI * 2 / count) * e + Math.random() * 0.5;
+                    const dist = 25 + Math.random() * 10;
+                    particles.push({
+                        x: x + Math.cos(angle) * dist,
+                        y: y + Math.sin(angle) * dist,
+                        vx: (Math.random() - 0.5) * 3.5,
+                        vy: (Math.random() - 0.5) * 3.5,
+                        free: true, radius: 5, trail: [], color: '#00ffcc'
+                    });
+                }
+            } else {
+                const count = 3;
+                for (let e = 0; e < count; e++) {
+                    const angle = (Math.PI * 2 / count) * e;
+                    const orbitR = 22 + Math.random() * 5;
+                    particles.push({
+                        x: x + Math.cos(angle) * orbitR,
+                        y: y + Math.sin(angle) * orbitR,
+                        orbitX: x, orbitY: y,
+                        orbitR, angle,
+                        speed: 0.025 + Math.random() * 0.015,
+                        free: false, radius: 4, trail: [], color: '#5599ff'
+                    });
+                }
+            }
+        }
+    }
+}
+
+// ===================== 그리기 함수들 =====================
+function drawBackground() {
+    if (selectedType === 'conductor') {
+        const grad = ctx.createLinearGradient(0, 0, W, H);
+        grad.addColorStop(0, 'rgba(30, 20, 0, 0.9)');
+        grad.addColorStop(1, 'rgba(50, 30, 0, 0.9)');
+        ctx.fillStyle = grad;
+    } else if (selectedType === 'insulator') {
+        const grad = ctx.createLinearGradient(0, 0, W, H);
+        grad.addColorStop(0, 'rgba(0, 10, 30, 0.9)');
+        grad.addColorStop(1, 'rgba(0, 20, 50, 0.9)');
+        ctx.fillStyle = grad;
+    } else {
+        ctx.fillStyle = 'rgba(5, 5, 20, 0.95)';
+    }
+    ctx.fillRect(0, 0, W, H);
+}
+
+function drawNuclei() {
+    nuclei.forEach(n => {
+        const grd = ctx.createRadialGradient(n.x, n.y, 2, n.x, n.y, n.r + 8);
+        if (selectedType === 'conductor') {
+            grd.addColorStop(0, 'rgba(255, 150, 50, 1)');
+            grd.addColorStop(0.6, 'rgba(255, 100, 20, 0.6)');
+            grd.addColorStop(1, 'rgba(255, 80, 0, 0)');
+        } else {
+            grd.addColorStop(0, 'rgba(100, 150, 255, 1)');
+            grd.addColorStop(0.6, 'rgba(60, 100, 255, 0.6)');
+            grd.addColorStop(1, 'rgba(30, 80, 255, 0)');
+        }
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r + 8, 0, Math.PI * 2);
+        ctx.fillStyle = grd;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fillStyle = selectedType === 'conductor' ? '#ff9944' : '#5577ff';
+        ctx.fill();
+        ctx.strokeStyle = selectedType === 'conductor' ? '#ffcc66' : '#aabbff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 13px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('+', n.x, n.y);
+    });
+}
+
+function drawParticlesStatic() {
+    particles.forEach(p => {
+        const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius + 4);
+        grd.addColorStop(0, p.color);
+        grd.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius + 4, 0, Math.PI * 2);
+        ctx.fillStyle = grd;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+    });
+}
+
+function drawLabel() {
+    if (!selectedType) return;
+    const label = selectedType === 'conductor'
+        ? `⚡ ${selectedName} — 자유전자가 원자핵의 구속을 벗어나 자유롭게 이동합니다`
+        : `🛡 ${selectedName} — 전자가 원자핵에 속박되어 궤도를 벗어나지 못합니다`;
+    const color = selectedType === 'conductor' ? '#ffcc88' : '#88ccff';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(0, H - 38, W, 38);
+    ctx.fillStyle = color;
+    ctx.font = 'bold 14px Malgun Gothic, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, W / 2, H - 19);
+}
+
+function drawStatic() {
+    ctx.clearRect(0, 0, W, H);
+    drawBackground();
+    drawNuclei();
+    drawParticlesStatic();
+    drawLabel();
+}
+
+// ===================== 애니메이션 =====================
+function drawElectricField() {
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    [H * 0.25, H * 0.5, H * 0.75].forEach(y => {
+        for (let x = 30; x < W - 30; x += 60) {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + 40, y);
+            ctx.strokeStyle = '#ffcc44';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x + 40, y);
+            ctx.lineTo(x + 32, y - 5);
+            ctx.lineTo(x + 32, y + 5);
+            ctx.closePath();
+            ctx.fillStyle = '#ffcc44';
+            ctx.fill();
+        }
+    });
+    ctx.restore();
+}
+
+function animate() {
+    animFrame = requestAnimationFrame(animate);
+    time++;
+    ctx.clearRect(0, 0, W, H);
+    drawBackground();
+
+    if (selectedType === 'conductor') drawElectricField();
+
+    drawNuclei();
+
+    if (selectedType === 'insulator') {
+        nuclei.forEach(n => {
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, 25, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(100, 150, 255, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        });
+    }
+
+    particles.forEach(p => {
+        if (p.free) {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vx += 0.03;
+            const speed = Math.sqrt(p.vx ** 2 + p.vy ** 2);
+            if (speed > 5) { p.vx = (p.vx / speed) * 5; p.vy = (p.vy / speed) * 5; }
+            if (p.x > W + 10) { p.x = -10; p.y = 40 + Math.random() * (H - 80); p.vx = 1.5 + Math.random() * 2; p.vy = (Math.random() - 0.5) * 2; }
+            if (p.x < -10) p.x = W + 10;
+            if (p.y < 10) p.vy = Math.abs(p.vy);
+            if (p.y > H - 45) p.vy = -Math.abs(p.vy);
+            p.trail.push({ x: p.x, y: p.y });
+            if (p.trail.length > 12) p.trail.shift();
+        } else {
+            p.angle += p.speed;
+            p.x = p.orbitX + Math.cos(p.angle) * p.orbitR;
+            p.y = p.orbitY + Math.sin(p.angle) * p.orbitR;
+            p.trail.push({ x: p.x, y: p.y });
+            if (p.trail.length > 8) p.trail.shift();
+        }
+    });
+
+    particles.forEach(p => {
+        if (p.trail.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(p.trail[0].x, p.trail[0].y);
+            for (let i = 1; i < p.trail.length; i++) ctx.lineTo(p.trail[i].x, p.trail[i].y);
+            ctx.strokeStyle = p.free ? 'rgba(0, 255, 200, 0.3)' : 'rgba(85, 153, 255, 0.25)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+    });
+
+    drawParticlesStatic();
+    drawLabel();
+}
+
+// ===================== 버튼 이벤트 =====================
+document.getElementById('startBtn').addEventListener('click', () => {
+    if (!selectedType || animating) return;
+    animating = true;
+    initParticles();
+    animate();
+    document.getElementById('startBtn').disabled = true;
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+    stopAnimation();
+    if (selectedType) {
+        initParticles();
+        drawStatic();
+        document.getElementById('startBtn').disabled = false;
+    } else {
+        ctx.clearRect(0, 0, W, H);
+        drawBackground();
+    }
+    animating = false;
+});
+
+function stopAnimation() {
+    if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+    animating = false;
+}
+
+// ===================== 초기 화면 =====================
+(function drawInit() {
+    ctx.fillStyle = 'rgba(5, 5, 20, 0.95)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(200, 200, 255, 0.4)';
+    ctx.font = 'bold 18px Malgun Gothic, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('← 왼쪽 표에서 물질을 선택하세요', W / 2, H / 2);
+    ctx.font = '14px Malgun Gothic, sans-serif';
+    ctx.fillStyle = 'rgba(180,180,220,0.3)';
+    ctx.fillText('도체 또는 부도체를 클릭하면 팝업이 나타납니다', W / 2, H / 2 + 30);
+})();
+</script>
+</body>
+</html>
